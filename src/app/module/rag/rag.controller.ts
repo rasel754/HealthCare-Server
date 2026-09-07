@@ -7,13 +7,14 @@ import status from "http-status";
 
 const RagService = new RAGService()
 
-const getStats = async (req: Request, res: Response, next: NextFunction) => {
-  console.log("hello from stats", req.query);
+const getStats = async (req: Request, res: Response) => {
+  const result = await RagService.getStats()
 
-  res.status(200).json({
+  sendResponse(res, {
     success: true,
-    message: "Rag stats",
-    data: []
+    httpStatusCode:status.OK,
+    message: "Rag stats retrive succuessfull",
+    data: result
   });
 };
 

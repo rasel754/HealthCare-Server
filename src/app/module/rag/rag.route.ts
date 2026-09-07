@@ -9,4 +9,6 @@ router.post("/ingest-doctor",RagController.ingestDoctor)
 
 router.post("/query",RagController.queryRag)
 
+
+
 export const RagRoutes=router;
