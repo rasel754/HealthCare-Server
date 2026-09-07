@@ -32,6 +32,6 @@ router.use('/prescription', PrescriptionRoutes)
 router.use('/review', ReviewRoutes)
 router.use('/payment', paymentRoutes)
 router.use('/stats', StatsRoutes)
-router.use('rag',RagRoutes)
+router.use('/rag',RagRoutes)
 export const indexRouter = router;
 

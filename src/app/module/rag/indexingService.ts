@@ -8,7 +8,7 @@ export class IndexingService {
     private embeddingService: EmbeddingService;
 
     constructor() {
-        this.embeddingService = new EmbeddingService()
+        this.embeddingService = new EmbeddingService();
     }
 
     async indexDocument(
@@ -17,17 +17,14 @@ export class IndexingService {
         sourceId: string,
         sourceLevel: string,
         content: string,
-        metadata?: Record<string, unknown>) {
-
+        metadata?: Record<string, unknown>
+    ) {
         try {
-
-            const embedding = await this.embeddingService.generateEmbeddings(content)
-
-            const vectorLiteral = toVectorLiteral(embedding)
-
+            const embedding = await this.embeddingService.generateEmbeddings(content);
+            const vectorLiteral = toVectorLiteral(embedding);
 
             await prisma.$executeRaw(Prisma.sql`
-        INSERT INTO "document_embeddings"
+        INSERT INTO "document_embedding"
         (
           "id",
           "chunkKey",
@@ -45,7 +42,7 @@ export class IndexingService {
           ${chunkKey},
           ${sourceType},
           ${sourceId},
-          ${sourceLevel|| null},
+          ${sourceLevel || null},
           ${content},
           ${JSON.stringify(metadata || {})} :: jsonb,
           CAST(${vectorLiteral} AS vector),
@@ -55,7 +52,7 @@ export class IndexingService {
         DO UPDATE SET
           "sourceType" = EXCLUDED."sourceType",
           "sourceId" = EXCLUDED."sourceId",
-          "sourceLevel" = EXCLUDED."sourceLabel",
+          "sourceLevel" = EXCLUDED."sourceLevel",
           "content" = EXCLUDED."content",
           "metadata" = EXCLUDED."metadata",
           "embedding" = EXCLUDED."embedding",
@@ -64,15 +61,14 @@ export class IndexingService {
           "updatedAt" = NOW()
         `);
         } catch (error) {
-            console.log("Failed to index document:", error);
-            return { success: false, message: "Indexing failed", error }
+            console.error("Failed to index document:", error);
+            throw error;
         }
-
     }
 
     async indexDoctorData() {
         try {
-            console.log("fatcing doctor data for indexing....")
+            console.log("fetching doctor data for indexing....");
             const doctors = await prisma.doctor.findMany({
                 where: {
                     isDeleted: false
@@ -84,63 +80,63 @@ export class IndexingService {
                         }
                     },
                     reviews: true,
-
                 }
-            })
+            });
+
             let indexCount = 0;
 
             for (const doctor of doctors) {
-                const specialtiesList = doctor.specialties.map((ds: any) => ds.specialties?.title).join("\n");
+                const specialtiesList = doctor.specialties
+                    .map((ds: any) => ds.specialty?.title)
+                    .filter(Boolean)
+                    .join(", ");
 
-                const reviewsText = doctor.reviews.map((r: any) => `- Rating: ${r.rating}/5. Comments: ${r.comments} || "No comments"`);
+                const reviewsText = doctor.reviews
+                    .map((r: any) => `- Rating: ${r.rating}/5. Comments: ${r.comments || "No comments"}`)
+                    .join("\n");
 
                 const content = `Doctor Name: ${doctor.name}
-            Experience: ${doctor.experience} years
-            Qualification: ${doctor.qualification}
-            Designation: ${doctor.designation}
-            Appointment Fee: $${doctor.appointmentFee}
-            Current Working Place: ${doctor.currentWorkingPlace}
-            Average Rating: ${doctor.averageRating}/5
-            Specialties: ${specialtiesList || "None listed"}
+Experience: ${doctor.experience} years
+Qualification: ${doctor.qualification}
+Designation: ${doctor.designation}
+Appointment Fee: $${doctor.appointmentFee}
+Current Working Place: ${doctor.currentWorkingPlace}
+Average Rating: ${doctor.averageRating}/5
+Specialties: ${specialtiesList || "None listed"}
 
-            Patient Reviews:
-            ${reviewsText || "No reviews yet."}`;
-
+Patient Reviews:
+${reviewsText || "No reviews yet."}`;
 
                 const metadata = {
                     doctorId: doctor.id,
                     name: doctor.name,
-                    specialties: doctor.specialties.map((ds: any) => ds.specialty.title),
+                    specialties: doctor.specialties.map((ds: any) => ds.specialty?.title).filter(Boolean),
                     averageRating: doctor.averageRating,
                     experience: doctor.experience,
                 };
 
                 const chunkKey = `doctor-${doctor.id}`;
 
-
                 await this.indexDocument(
                     chunkKey,
                     "DOCTOR",
                     doctor.id,
-                    content,
                     doctor.name,
+                    content,
                     metadata,
-                )
-                indexCount++
+                );
+                indexCount++;
             }
+
             console.log(`Successfully indexed ${indexCount} doctors.`);
             return {
                 success: true,
                 message: `Successfully indexed ${indexCount} doctors.`,
                 indexCount
-            }
-
+            };
         } catch (error) {
-            console.log("Indexing failed:", error);
-            return { success: false, message: "Indexing failed", error }
+            console.error("Indexing failed:", error);
+            throw error;
         }
     }
-
-
-
 }

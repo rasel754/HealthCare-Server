@@ -1,53 +1,48 @@
 import { envVars } from "../../../config/env";
 
-export class EmbeddingService{
-    private apiKey:string;
-    private apiUrl : string =" https://openrouter.ai/api/v1";
-    private embeddingModel:string;
+export class EmbeddingService {
+    private apiKey: string;
+    private apiUrl: string = "https://openrouter.ai/api/v1";
+    private embeddingModel: string;
 
-    constructor(){
-        this.apiKey =envVars.RAG.OPENROUTER_API_KEY || "";
-        this.embeddingModel=envVars.RAG.OPENROUTER_EMBEDDING_MODEL || "nvidia/nemotron-3-embed-1b:free";
-    
-        if(!this.apiKey){
-            throw new Error("OPENROOUTE_API_KEY is not set in env")
+    constructor() {
+        this.apiKey = envVars.RAG.OPENROUTER_API_KEY || "";
+        this.embeddingModel = envVars.RAG.OPENROUTER_EMBEDDING_MODEL || "nvidia/nemotron-3-embed-1b:free";
+
+        if (!this.apiKey) {
+            throw new Error("OPENROUTER_API_KEY is not set in env");
         }
     }
 
-    async generateEmbeddings(text:string){
-
+    async generateEmbeddings(text: string): Promise<number[]> {
         try {
-            const response = await fetch(`${this.apiUrl}/embeddings`,{
-                method:"POST",
-                headers:{
-                    "Authorization":`Bearer ${this.apiKey}`,
-                    "Content-Type":"application/json"
+            const response = await fetch(`${this.apiUrl}/embeddings`, {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${this.apiKey}`,
+                    "Content-Type": "application/json"
                 },
-                body:JSON.stringify({
-                    input:text,
-                    model:this.embeddingModel,
-
+                body: JSON.stringify({
+                    input: text,
+                    model: this.embeddingModel,
                 })
-            })
+            });
 
-            if(!response.ok){
-                throw new Error(`openrouter api error ${response.status}`)
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`OpenRouter API error ${response.status}: ${errorText}`);
             }
 
-            const data =await response.json();
-            
-            if(!data.data || data.data.length===0){
-                throw new Error("No embedding data returend")
+            const data = await response.json();
+
+            if (!data.data || data.data.length === 0) {
+                throw new Error("No embedding data returned from OpenRouter");
             }
 
-           return data.data[0].embedding;
-            
-            
+            return data.data[0].embedding;
         } catch (error) {
-            console.log("Failed to generate embeddings:", error);
-            return { success: false, message: "Indexing failed", error }
-            
+            console.error("Failed to generate embeddings:", error);
+            throw error;
         }
-
     }
 }
