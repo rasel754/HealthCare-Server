@@ -71,20 +71,45 @@ export class LlmService {
         body: JSON.stringify(bodyPayload),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
+      const responseText = await response.text();
+      let data: any;
+      try {
+        data = JSON.parse(responseText);
+      } catch {
         throw new Error(
-          `OpenRouter API error: ${response.status} - ${errorData.error?.message} || "unknown error"`,
+          `OpenRouter API returned invalid JSON (${response.status}): ${responseText.slice(0, 300)}`
         );
       }
 
-      const data = await response.json();
+      if (!response.ok) {
+        const errorMessage =
+          data?.error?.message || data?.message || response.statusText || "unknown error";
+        throw new Error(`OpenRouter API error: ${response.status} - ${errorMessage}`);
+      }
 
-      return data.choices[0].message.content;
+      if (data?.error) {
+        const errorMessage =
+          typeof data.error === "string"
+            ? data.error
+            : data.error.message || JSON.stringify(data.error);
+        throw new Error(`OpenRouter API error: ${errorMessage}`);
+      }
 
-        } catch (error) {
-            console.error("LLM Service Error:", error);
-            throw error;
-        }
+      if (!data?.choices || !Array.isArray(data.choices) || data.choices.length === 0) {
+        throw new Error(`OpenRouter API returned no choices: ${JSON.stringify(data)}`);
+      }
+
+      const content = data.choices[0]?.message?.content;
+      if (content === undefined || content === null) {
+        throw new Error(
+          `OpenRouter API message content is missing: ${JSON.stringify(data.choices[0])}`
+        );
+      }
+
+      return content;
+    } catch (error) {
+      console.error("LLM Service Error:", error);
+      throw error;
     }
+  }
 }

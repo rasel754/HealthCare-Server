@@ -42,7 +42,8 @@ interface envConfig {
         OPENROUTER_API_KEY: string,
         OPENROUTER_EMBEDDING_MODEL: string,
         OPENROUTER_LLM_MODEL: string,
-    }
+    },
+    REDIS_URL: string,
 
 }
 
@@ -79,6 +80,7 @@ const loadEnvVariable = (): envConfig => {
         'OPENROUTER_API_KEY',
         'OPENROUTER_EMBEDDING_MODEL',
         'OPENROUTER_LLM_MODEL',
+        // 'REDIS_URL',
 
     ];
 
@@ -126,7 +128,13 @@ const loadEnvVariable = (): envConfig => {
             OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY as string,
             OPENROUTER_EMBEDDING_MODEL: process.env.OPENROUTER_EMBEDDING_MODEL as string,
             OPENROUTER_LLM_MODEL: process.env.OPENROUTER_LLM_MODEL as string,
-        }
+        },
+        REDIS_URL: process.env.REDIS_URL as string,
+        // REDIS_CLIENT: {
+        //     REDIS_HOST: process.env.REDIS_HOST as string,
+        //     REDIS_PORT: process.env.REDIS_PORT as string,
+        //     REDIS_PASSWORD: process.env.REDIS_PASSWORD as string,
+        // }
     }
 }
 

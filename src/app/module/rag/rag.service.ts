@@ -40,7 +40,8 @@ export class RAGService {
 
 
         } catch (error) {
-            console.log(error)
+            console.error("Error retrieving relevant docs:", error);
+            return [];
         }
     }
 
@@ -48,38 +49,34 @@ export class RAGService {
     async generateAnswer(query: string, limit: number = 5, sourceType?: string, asJson: boolean = false) {
 
         try {
-            const releventDocs = await this.retrieveReleventDocs(query, limit, sourceType)
+            const releventDocs = (await this.retrieveReleventDocs(query, limit, sourceType)) || [];
 
             //extract content from documents for context 
-            const context = (releventDocs as any).filter((doc: any) => doc.content).map((doc: any) => doc.content)
+            const context = (releventDocs as any[])
+                .filter((doc: any) => doc && doc.content)
+                .map((doc: any) => doc.content);
 
-            let answer = await this.llmService.generateResponse(query, context, asJson)
+            let answer = await this.llmService.generateResponse(query, context, asJson);
             let parsedAnswer: any = answer;
-            if (asJson) {
+            if (asJson && typeof answer === "string") {
                 try {
-                    // If the model wrapped the JSON in markdown blocks, clean it up
-                    if (answer.startsWith("```json")) {
-                        answer = answer
-                            .replace(/```json\n?/, "")
-                            .replace(/```$/, "")
-                            .trim();
-                    } else if (answer.startsWith("```")) {
-                        answer = answer
-                            .replace(/```\n?/, "")
-                            .replace(/```$/, "")
+                    let cleaned = answer.trim();
+                    if (cleaned.startsWith("```")) {
+                        cleaned = cleaned
+                            .replace(/^```(?:json)?\s*/i, "")
+                            .replace(/\s*```$/i, "")
                             .trim();
                     }
-                    parsedAnswer = JSON.parse(answer);
+                    parsedAnswer = JSON.parse(cleaned);
                 } catch (error) {
-                    console.log(error);
+                    console.error("Failed to parse JSON response:", error);
+                    parsedAnswer = { raw: answer };
                 }
             }
 
-
-
             return {
                 answer: parsedAnswer,
-                sources: (releventDocs as any).map((doc: any) => ({
+                sources: (releventDocs as any[]).map((doc: any) => ({
                     id: doc.id,
                     chunkKey: doc.chunkKey,
                     sourceType: doc.sourceType,
@@ -91,7 +88,7 @@ export class RAGService {
                 contextUsed: context.length > 0,
             };
         } catch (error) {
-            console.log(error);
+            console.error("Error in generateAnswer:", error);
             throw error;
         }
     }

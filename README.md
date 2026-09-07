@@ -11,6 +11,7 @@ Welcome to the backend documentation for the **HealthCare System Server**. This 
 - **Better-Auth Base Path**: `/api/auth`
 - **Stripe Webhook Path**: `/webhook`
 - **Architecture**: Node.js + Express.js 5 + TypeScript + Prisma 7 ORM + PostgreSQL
+- **Caching & In-Memory Store**: Redis (via `redis` client)
 - **Authentication**: Better Auth + Custom JWT Tokens (Dual-token & session authentication)
 - **File Storage**: Cloudinary (handled via Multer)
 - **Payments**: Stripe Payment Gateway
@@ -97,6 +98,7 @@ NEXT_PUBLIC_BETTER_AUTH_URL=http://localhost:5000/api/auth
 | `FRONTEND_URL` | Frontend URL for CORS & redirects (e.g., `http://localhost:3000`) |
 | `BETTER_AUTH_URL` | Better-Auth URL (e.g., `http://localhost:5000`) |
 | `DATABASE_URL` | PostgreSQL connection string |
+| `REDIS_URL` | Redis connection URL (e.g., `redis://localhost:6379` or cloud instance) |
 | `ACCESS_TOKEN_SECRET` | Secret key for signing access JWTs |
 | `REFRESH_TOKEN_SECRET` | Secret key for signing refresh JWTs |
 
@@ -239,6 +241,44 @@ NEXT_PUBLIC_BETTER_AUTH_URL=http://localhost:5000/api/auth
 | `PATCH` | `/api/v1/admins/change-user-role` | Super Admin | Change user role |
 | `GET` | `/api/v1/admins` | Admin, Super Admin | List all admins |
 | `GET` | `/api/v1/super-admins` | Super Admin | List all super admins |
+
+---
+
+### 🤖 13. AI & RAG Search (`/api/v1/rag`)
+
+| Method | Endpoint | Access | Description |
+|---|---|---|---|
+| `GET` | `/api/v1/rag/stats` | Public | Get vector store document counts & RAG stats |
+| `POST` | `/api/v1/rag/ingest-doctor` | Admin, Super Admin | Ingest and embed doctor profiles into vector store |
+| `POST` | `/api/v1/rag/query` | Public | Query AI Doctor search with automatic **Redis caching** |
+
+---
+
+## ⚡ Redis In-Memory Caching & Performance
+
+The backend incorporates **Redis** as a high-performance in-memory caching layer (`src/app/lib/redis.ts`) to reduce latency, prevent duplicate expensive computations, and enhance scalability.
+
+### 🏗 Architecture & Service Layer
+- **Singleton Client**: Manages a unified Redis client instance initialized during server startup (`src/server.ts`).
+- **Connection Flexibility**: Supports `REDIS_URL` connection strings with automatic fallback to individual socket options (`REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD`).
+- **Resilience & Graceful Degradation**: If Redis is offline or disconnected, cache operations fail gracefully with warnings rather than crashing API requests or throwing 500 errors.
+
+### 🛠 Core Methods
+| Method | Description |
+|---|---|
+| `get(key)` | Retrieves a cached value string or `null` if expired/missing. |
+| `set(key, value, ttlInSeconds)` | Serializes objects to JSON and sets a key with a Time-To-Live (TTL). |
+| `update(key, value, ttlInSeconds)` | Updates existing key value and resets TTL. |
+| `delete(key)` | Removes a key from the cache. |
+| `isAvailable()` | Pings Redis to check health and connectivity status. |
+
+### 🚀 Caching Strategy & Implementation
+- **AI / RAG Doctor Search (`/api/v1/rag/query`)**:
+  - **Dynamic Cache Key**: `rag:query:<query>:<limit>:<sourceType>`
+  - **TTL (Time-To-Live)**: `1800` seconds (30 minutes).
+  - **Cache Flow**:
+    1. **Cache Hit**: Returns cached answers immediately (sub-millisecond latency).
+    2. **Cache Miss**: Generates answers via AI embedding + vector search + LLM, caches the result in Redis with 30-minute expiration, and returns the response to the client.
 
 ---
 
