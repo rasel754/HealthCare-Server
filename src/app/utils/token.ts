@@ -19,8 +19,8 @@ const storeTokenIntoCookie = (res: Response, token: string) => {
     const maxAge = ms(envVars.ACCESS_TOKEN_EXPIRES_IN as StringValue);
     cookieUtils.setCookie(res, 'accessToken', token, {
         httpOnly: true,
-        secure: true,
-        sameSite: "none",
+        secure: envVars.NODE_ENV === "production",
+        sameSite: envVars.NODE_ENV === "production" ? "none" : "lax",
         path: '/',
         maxAge: typeof maxAge === 'number' ? maxAge : 1000 * 60 * 60 * 24
     })
@@ -31,8 +31,8 @@ const storeRefreshTokenIntoCookie = (res: Response, refreshToken: string) => {
     const maxAge = ms(envVars.REFRESH_TOKEN_EXPIRES_IN as StringValue);
     cookieUtils.setCookie(res, 'refreshToken', refreshToken, {
         httpOnly: true,
-        secure: true,
-        sameSite: "none",
+        secure: envVars.NODE_ENV === "production",
+        sameSite: envVars.NODE_ENV === "production" ? "none" : "lax",
         path: '/',
         maxAge: typeof maxAge === 'number' ? maxAge : 1000 * 60 * 60 * 24 * 7
     })
@@ -42,10 +42,10 @@ const storeRefreshTokenIntoCookie = (res: Response, refreshToken: string) => {
 
 const setBetterAuthSessionCookie = (res: Response, token: string) => {
     const maxAge = ms(envVars.BETTER_AUTH_SESSION_TOKEN_EXPIRES_IN as StringValue);
-    cookieUtils.setCookie(res, 'better-auth-session', token, {
+    cookieUtils.setCookie(res, 'better-auth.session_token', token, {
         httpOnly: true,
-        secure: true,
-        sameSite: "none",
+        secure: envVars.NODE_ENV === "production",
+        sameSite: envVars.NODE_ENV === "production" ? "none" : "lax",
         path: "/",
         maxAge: typeof maxAge === 'number' ? maxAge : 1000 * 60 * 60 * 24
     })
