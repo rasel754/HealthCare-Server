@@ -18,7 +18,6 @@ const handleStripeWebhookEvent = async (event : Stripe.Event) =>{
     })
 
     if(existingPayment){
-        console.log(`Event ${event.id} already processed. Skipping`);
         return {message : `Event ${event.id} already processed. Skipping`}
     }
 
@@ -87,8 +86,6 @@ const handleStripeWebhookEvent = async (event : Stripe.Event) =>{
                         );
 
                         invoiceUrl = cloudinaryResponse?.secure_url;
-
-                        console.log(`✅ Invoice PDF generated and uploaded for payment ${paymentId}`);
                     } catch (pdfError) {
                         console.error("❌ Error generating/uploading invoice PDF:", pdfError);
                         // Continue with payment update even if PDF generation fails
@@ -135,33 +132,23 @@ const handleStripeWebhookEvent = async (event : Stripe.Event) =>{
                             }
                         ]
                     });
-
-                    console.log(`✅ Invoice email sent to ${appointment.patient.email}`);
                 } catch (emailError) {
                     console.error("❌ Error sending invoice email:", emailError);
                     // Log but don't fail the payment if email fails
                 }
             }
 
-            console.log(`✅ Payment ${session.payment_status} for appointment ${appointmentId}`);
             break;
         }
 
         case "checkout.session.expired" : {
-                const session = event.data.object
-
-                console.log(`Checkout session ${session.id} expired. Marking associated payment as failed.`);
-                break;
-
+            break;
         }
         case "payment_intent.payment_failed" : {
-            const session = event.data.object
-
-            console.log(`Payment intent ${session.id} failed. Marking associated payment as failed.`);
             break;
         }
         default :
-            console.log(`Unhandled event type ${event.type}`);
+            break;
     }
 
     return {message : `Webhook Event ${event.id} processed successfully`}

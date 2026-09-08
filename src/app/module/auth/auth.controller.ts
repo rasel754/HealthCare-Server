@@ -7,6 +7,7 @@ import { tokenUtils } from "../../utils/token";
 import AppError from "../../errorHelpers/AppError";
 import { envVars } from "../../../config/env";
 import { auth } from "../../lib/auth";
+import { Role } from "../../../generated/prisma/enums";
 
 /**
  * Controller to handle Patient registration.
@@ -256,6 +257,10 @@ const googleLoginSuccess = catchAsync(async (req: Request, res: Response) => {
         return res.redirect(`${envVars.FRONTEND_URL}/login?error=no_user_found`);
     }
 
+    if (session.user.role && session.user.role !== Role.PATIENT) {
+        return res.redirect(`${envVars.FRONTEND_URL}/login?error=patient_only`);
+    }
+
     const result = await AuthService.googleLoginSuccess(session);
 
     const { accessToken, refreshToken } = result;
@@ -264,7 +269,9 @@ const googleLoginSuccess = catchAsync(async (req: Request, res: Response) => {
     tokenUtils.storeRefreshTokenIntoCookie(res, refreshToken);
     tokenUtils.setBetterAuthSessionCookie(res, sessionToken);
 
-    const isValidRedirectPath = redirectPath.startsWith("/") && !redirectPath.startsWith("//");
+    // Patients can only be routed to patient dashboards, profile, or public pages.
+    const isDoctorOrAdminRoute = redirectPath.startsWith("/doctor") || redirectPath.startsWith("/admin");
+    const isValidRedirectPath = redirectPath.startsWith("/") && !redirectPath.startsWith("//") && !isDoctorOrAdminRoute;
     const finalRedirectPath = isValidRedirectPath ? redirectPath : "/dashboard";
 
     res.redirect(`${envVars.FRONTEND_URL}${finalRedirectPath}`);

@@ -116,7 +116,7 @@ export class RAGService {
                 timestamp: new Date(),
             };
         } catch (error) {
-            console.log(error);
+            console.error("Error getting RAG stats:", error);
             throw error;
         }
     }

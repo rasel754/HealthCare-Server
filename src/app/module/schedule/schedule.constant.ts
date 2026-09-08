@@ -4,7 +4,6 @@ export const scheduleFilterableFields = [
     'id',
     'startDateTime',
     'endDateTime',
-    // 'appointments.doctors.id',
 ]
 
 export const scheduleSearchableFields = [

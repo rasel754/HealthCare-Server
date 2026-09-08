@@ -89,7 +89,6 @@ export const auth = betterAuth({
                         }
 
                         if (user && user.role === Role.SUPER_ADMIN) {
-                            console.log(`User with email ${email} is a super admin. Skipping sending verification OTP.`);
                             return;
                         }
                         

@@ -1,5 +1,3 @@
-// payment controller base on payment service 
-
 import { Request, Response } from "express";
 import { catchAsync } from "../../shared/catchAsync";
 import httpStatus from "http-status";
@@ -13,8 +11,7 @@ export const handleStripeWebhookEvent = catchAsync(async (req:Request, res:Respo
     const webhookSecret = envVars.STRIPE.STRIPE_WEBHOOK_SECRET 
 
     if(!signature || !webhookSecret){
-       console.log(`missing signature or webhook secret `);
-       return res.send(httpStatus.BAD_REQUEST).json({message:"missing webhook signature or secret"});
+       return res.status(httpStatus.BAD_REQUEST).json({message:"missing webhook signature or secret"});
     }
 
     let event ;
@@ -22,7 +19,7 @@ export const handleStripeWebhookEvent = catchAsync(async (req:Request, res:Respo
     try{
         event = stripe.webhooks.constructEvent(req.body,signature,webhookSecret)
     }catch(error){
-        console.log(`error processing stripe webhook`,error);
+        console.error(`Error processing stripe webhook signature:`, error);
         return res.status(httpStatus.BAD_REQUEST).json({message:"error processing stripe webhook"})
     }
     
@@ -36,15 +33,13 @@ export const handleStripeWebhookEvent = catchAsync(async (req:Request, res:Respo
             data:result
         });
     }catch(error){
-        console.log(`error processing stripe webhook event`,error);
+        console.error(`Error processing stripe webhook event:`, error);
         sendResponse(res,{
             httpStatusCode:httpStatus.INTERNAL_SERVER_ERROR,
             success:false,
             message:"error processing stripe webhook event"
         })
     }
-
-    
 })
 
 

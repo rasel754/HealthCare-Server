@@ -51,7 +51,6 @@ export const getAllDoctors = async (query:IQueryParams) => {
         })
         .include({
             user: true,
-            // specialties: true,
             specialties: {
                 include:{
                     specialty: true
@@ -64,7 +63,6 @@ export const getAllDoctors = async (query:IQueryParams) => {
         .fields()
         .execute();
 
-        console.log(result);
     return result;
 
 };
@@ -109,7 +107,7 @@ const getDoctorById = async (id: string) => {
 const getSpecialtiesToUpdate = async (
     tx: any,
     id: string,
-    specialties: (string | IUpdateDoctorSpecialtyPayload)[]
+    specialties: (string | IUpdateDoctorSpecialtyPayload | { id?: string; specialtyId?: string; shouldDelete?: boolean })[]
 ) => {
     const doctor = await tx.doctor.findUniqueOrThrow({
         where: { id },
@@ -119,13 +117,19 @@ const getSpecialtiesToUpdate = async (
     });
     const existingSpecialtyIds = existingSpecialties.map((es: any) => es.specialtyId);
 
-    // Standardize input payload (handles both string array and object array)
-    const normalizedSpecialties: IUpdateDoctorSpecialtyPayload[] = specialties.map((s) => {
-        if (typeof s === "string") {
-            return { specialtyId: s, shouldDelete: false };
-        }
-        return s;
-    });
+    // Standardize input payload (handles string array, object array with specialtyId or id, etc.)
+    const normalizedSpecialties: IUpdateDoctorSpecialtyPayload[] = specialties
+        .map((s: any) => {
+            if (typeof s === "string") {
+                return { specialtyId: s, shouldDelete: false };
+            }
+            if (typeof s === "object" && s !== null) {
+                const specId = s.specialtyId || (s.specialty ? s.specialty.id : s.id);
+                return { specialtyId: specId, shouldDelete: Boolean(s.shouldDelete) };
+            }
+            return s;
+        })
+        .filter((s: any) => Boolean(s?.specialtyId));
 
     const activeInputIds = normalizedSpecialties
         .filter((s) => !s.shouldDelete)
@@ -231,6 +235,24 @@ const updateDoctor = async (id: string, payload: any) => {
             }
 
             if (specialtyIdsToAdd.length > 0) {
+                // Verify all specialties to add exist in database
+                const existingValidSpecialties = await tx.specialty.findMany({
+                    where: {
+                        id: { in: specialtyIdsToAdd },
+                        isDeleted: false,
+                    },
+                    select: { id: true },
+                });
+                const validSpecialtyIdSet = new Set(existingValidSpecialties.map((s: any) => s.id));
+                const invalidIds = specialtyIdsToAdd.filter((specId: string) => !validSpecialtyIdSet.has(specId));
+
+                if (invalidIds.length > 0) {
+                    throw new AppError(
+                        status.BAD_REQUEST,
+                        `Invalid specialty ID(s): ${invalidIds.join(", ")}`
+                    );
+                }
+
                 await tx.doctorSpecialty.createMany({
                     data: specialtyIdsToAdd.map((specialtyId: string) => ({
                         doctorId: updatedDoctor.id,

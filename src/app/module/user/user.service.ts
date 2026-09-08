@@ -153,8 +153,6 @@ const createDoctor = async (payload: ICreateDoctorPayload) => {
         return result;
     } catch (error) {
         // Step 5: Rollback - delete created auth user if transaction fails
-        console.log("Failed to create user", error);
-
         await prisma.user.delete({
             where: {
                 id: userData.user.id,

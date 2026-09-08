@@ -68,7 +68,6 @@ export class IndexingService {
 
     async indexDoctorData() {
         try {
-            console.log("fetching doctor data for indexing....");
             const doctors = await prisma.doctor.findMany({
                 where: {
                     isDeleted: false
@@ -128,7 +127,6 @@ ${reviewsText || "No reviews yet."}`;
                 indexCount++;
             }
 
-            console.log(`Successfully indexed ${indexCount} doctors.`);
             return {
                 success: true,
                 message: `Successfully indexed ${indexCount} doctors.`,

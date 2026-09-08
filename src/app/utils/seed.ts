@@ -12,7 +12,6 @@ export const seedSuperAdmin = async () => {
         })
 
         if (isSuperAdminExist) {
-            console.log("Super admin already exists. Skipping seeding super admin.");
             return;
         }
 
@@ -49,16 +48,6 @@ export const seedSuperAdmin = async () => {
 
         });
 
-        const superAdmin = await prisma.admin.findFirst({
-            where: {
-                email: envVars.SUPER_ADMIN_EMAIL,
-            },
-            include: {
-                user: true,
-            }
-        })
-
-        console.log("Super Admin Created ", superAdmin);
     } catch (error) {
         console.error("Error seeding super admin: ", error);
         await prisma.user.delete({

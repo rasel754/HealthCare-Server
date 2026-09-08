@@ -13,7 +13,6 @@ const router = Router();
  * Description: Creates a new medical specialty record.
  */
 router.post('/',
-    // checkAuth(Role.ADMIN, Role.SUPER_ADMIN),
     multerUpload.any(),
     validateRequest(SpecialtyValidation.createSpecialtyZodSchema),
     SpecialtyController.createSpecialty);

@@ -66,6 +66,7 @@ export const ModelName = {
   PatientHealthData: 'PatientHealthData',
   Payment: 'Payment',
   Prescription: 'Prescription',
+  DocumentEmbedding: 'DocumentEmbedding',
   Review: 'Review',
   Schedule: 'Schedule',
   SuperAdmin: 'SuperAdmin'
@@ -326,6 +327,23 @@ export const PrescriptionScalarFieldEnum = {
 } as const
 
 export type PrescriptionScalarFieldEnum = (typeof PrescriptionScalarFieldEnum)[keyof typeof PrescriptionScalarFieldEnum]
+
+
+export const DocumentEmbeddingScalarFieldEnum = {
+  id: 'id',
+  chunkKey: 'chunkKey',
+  sourceType: 'sourceType',
+  sourceId: 'sourceId',
+  sourceLevel: 'sourceLevel',
+  content: 'content',
+  metadata: 'metadata',
+  isDeleted: 'isDeleted',
+  deletedAt: 'deletedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type DocumentEmbeddingScalarFieldEnum = (typeof DocumentEmbeddingScalarFieldEnum)[keyof typeof DocumentEmbeddingScalarFieldEnum]
 
 
 export const ReviewScalarFieldEnum = {

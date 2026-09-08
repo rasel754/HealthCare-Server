@@ -115,7 +115,7 @@ const givePrescription = async (user : IRequestUser, payload : ICreatePrescripti
                ]
            })
        } catch (error) {
-            console.log("Failed To send email notification for prescription", error);
+            console.error("Failed to send email notification for prescription:", error);
        }
 
        return updatedPrescription;

@@ -80,8 +80,6 @@ const loadEnvVariable = (): envConfig => {
         'OPENROUTER_API_KEY',
         'OPENROUTER_EMBEDDING_MODEL',
         'OPENROUTER_LLM_MODEL',
-        // 'REDIS_URL',
-
     ];
 
     requireEnvVariable.forEach((variable) => {
@@ -130,11 +128,6 @@ const loadEnvVariable = (): envConfig => {
             OPENROUTER_LLM_MODEL: process.env.OPENROUTER_LLM_MODEL as string,
         },
         REDIS_URL: process.env.REDIS_URL as string,
-        // REDIS_CLIENT: {
-        //     REDIS_HOST: process.env.REDIS_HOST as string,
-        //     REDIS_PORT: process.env.REDIS_PORT as string,
-        //     REDIS_PASSWORD: process.env.REDIS_PASSWORD as string,
-        // }
     }
 }
 

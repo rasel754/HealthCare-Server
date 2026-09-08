@@ -440,40 +440,76 @@ const resetPassword = async (email: string, otp: string, newPassword: string) =>
 }
 
 const googleLoginSuccess = async (session: Record<string, any>) => {
-    const isPatientExists = await prisma.patient.findUnique({
+    let user = await prisma.user.findUnique({
+        where: { id: session.user.id },
+    });
+
+    if (!user && session.user.email) {
+        user = await prisma.user.findUnique({
+            where: { email: session.user.email },
+        });
+    }
+
+    if (user && user.role !== Role.PATIENT) {
+        throw new AppError(status.FORBIDDEN, "Google sign-in is exclusively available for patients");
+    }
+
+    if (user && (user.status === UserStatus.BLOCKED || user.isDeleted)) {
+        throw new AppError(status.FORBIDDEN, "Account is blocked or deleted");
+    }
+
+    const isPatientExists = await prisma.patient.findFirst({
         where: {
-            userId: session.user.id,
-        }
-    })
+            OR: [
+                { userId: session.user.id },
+                { email: session.user.email },
+            ],
+        },
+    });
 
     if (!isPatientExists) {
         await prisma.patient.create({
             data: {
                 userId: session.user.id,
-                name: session.user.name,
+                name: session.user.name || "Patient",
                 email: session.user.email,
-            }
-
-        })
+                profilePhoto: session.user.image || null,
+            },
+        });
+    } else if (isPatientExists.userId !== session.user.id) {
+        await prisma.patient.update({
+            where: { id: isPatientExists.id },
+            data: {
+                userId: session.user.id,
+            },
+        });
     }
 
     const accessToken = tokenUtils.getAccessToken({
         userId: session.user.id,
-        role: session.user.role,
+        role: Role.PATIENT,
         name: session.user.name,
+        email: session.user.email,
+        status: user?.status || UserStatus.ACTIVE,
+        isDeleted: user?.isDeleted || false,
+        emailVerified: true,
     });
 
     const refreshToken = tokenUtils.getRefreshToken({
         userId: session.user.id,
-        role: session.user.role,
+        role: Role.PATIENT,
         name: session.user.name,
+        email: session.user.email,
+        status: user?.status || UserStatus.ACTIVE,
+        isDeleted: user?.isDeleted || false,
+        emailVerified: true,
     });
 
     return {
         accessToken,
         refreshToken,
-    }
-}
+    };
+};
 
 
 export const AuthService = {

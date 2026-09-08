@@ -10,7 +10,6 @@ class RedisService {
     try {
       // Try to get Redis URL from environment variables
       const redisUrl = envVars.REDIS_URL;
-      // console.log({ redisUrl });
 
       if (redisUrl) {
         this.client = createClient({ url: redisUrl });
@@ -36,23 +35,19 @@ class RedisService {
       });
 
       this.client.on("connect", () => {
-        console.log("Redis Client Connected");
         this.isConnected = true;
       });
 
       this.client.on("ready", () => {
-        console.log("Redis Client Ready");
         this.isConnected = true;
       });
 
       this.client.on("end", () => {
-        console.log("Redis Client Disconnected");
         this.isConnected = false;
       });
 
       // Reconnect strategy
       this.client.on("reconnecting", () => {
-        console.log("Redis Client Reconnecting");
       });
 
       await this.client.connect();
@@ -113,8 +108,7 @@ class RedisService {
       const client = this.ensureConnection();
       await client.ping();
       return true;
-    } catch (error) {
-      console.log(error);
+    } catch {
       return false;
     }
   }
@@ -129,6 +123,3 @@ class RedisService {
 
 // Export a singleton instance
 export const redisService = new RedisService();
-
-// Connect on module import (optional - can also connect manually)
-// redisService.connect().catch(console.error);
