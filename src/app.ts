@@ -1,6 +1,7 @@
+/// <reference path="./app/interface/index.d.ts" />
 import express, { Application } from 'express';
 import cookieParser from "cookie-parser";
-import { indexRouter } from './app/routes';
+import { indexRouter } from './app/routes/index';
 import globalErrorHandler from './app/middlewares/globalErrorHandler';
 import notFound from './app/middlewares/notFound';
 import { toNodeHandler } from 'better-auth/node';
@@ -10,8 +11,6 @@ import cors from "cors";
 import { envVars } from './config/env';
 import qs from "qs";
 import { PaymentControler } from './app/module/payment/payment.controller';
-import { AppointmentService } from './app/module/appointment/appointment.service';
-import cron from "node-cron";
 
 
 const app: Application = express();
@@ -36,15 +35,16 @@ app.use("/api/auth", toNodeHandler(auth));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(cookieParser());
-app.use("/api/v1", indexRouter);
 
-cron.schedule("*/25 * * * *", async () => {
-    try {
-        await AppointmentService.cancelUnpaidAppointments();
-    } catch (error: any) {
-        console.error("Error occurred while canceling unpaid appointments:", error.message);
-    }
+app.get("/", (req, res) => {
+    res.status(200).json({
+        success: true,
+        message: "HealthCare Server is running live!",
+        timestamp: new Date().toISOString()
+    });
 });
+
+app.use("/api/v1", indexRouter);
 
 app.use(globalErrorHandler);
 

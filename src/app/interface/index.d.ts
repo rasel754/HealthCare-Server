@@ -1,4 +1,3 @@
-import { Role } from "../../generated/prisma/enums";
 import { IRequestUser } from "./requestUser.interface";
 
 declare global {

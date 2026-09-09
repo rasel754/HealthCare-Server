@@ -4,7 +4,9 @@
   "main": "index.js",
   "scripts": {
     "start": "node dist/server.js",
-    "build": "tsc",
+    "postinstall": "prisma generate",
+    "build": "prisma generate && esbuild src/app.ts --bundle --platform=node --format=esm --outfile=api/index.js --packages=external && tsc",
+    "vercel-build": "prisma generate && esbuild src/app.ts --bundle --platform=node --format=esm --outfile=api/index.js --packages=external && tsc",
     "dev": "tsx watch src/server.ts",
     "lint": "eslint . /src/**/*",
     "migrate": "prisma migrate dev",

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextFunction, Request, Response } from "express";
 import status from "http-status";
 import { Role, UserStatus } from "../../generated/prisma/enums";
@@ -7,6 +6,7 @@ import { prisma } from "../lib/prisma";
 import cookieUtils from "../utils/cookie";
 import jwtUtils from "../utils/jwt";
 import { envVars } from "../../config/env";
+import { IRequestUser } from "../interface/requestUser.interface";
 
 
 export const checkAuth = (...authRoles: Role[]) => async (req: Request, res: Response, next: NextFunction) => {

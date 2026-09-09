@@ -4,11 +4,21 @@ import { seedSuperAdmin } from "./app/utils/seed";
 import { envVars } from "./config/env";
 import { redisService } from "./app/lib/redis";
 
+import { AppointmentService } from "./app/module/appointment/appointment.service";
+import cron from "node-cron";
+
 let server : Server;
 const bootstrap = async() => {
     try {
         await seedSuperAdmin();
         await redisService.connect().catch(console.error);
+        cron.schedule("*/25 * * * *", async () => {
+            try {
+                await AppointmentService.cancelUnpaidAppointments();
+            } catch (error: any) {
+                console.error("Error occurred while canceling unpaid appointments:", error.message);
+            }
+        });
         server = app.listen(envVars.PORT, () => {
             console.log(`Server is running on http://localhost:${envVars.PORT}`);
         });
